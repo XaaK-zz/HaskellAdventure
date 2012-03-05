@@ -7,6 +7,7 @@ module Main (main) where
 
 import HaskellAdventure.Input
 import HaskellAdventure.Data
+import IO
 
 -----------------------------------------------------------------
 --main function
@@ -17,5 +18,6 @@ import HaskellAdventure.Data
 -----------------------------------------------------------------
 main =
  do
+    hSetBuffering stdin LineBuffering
     executeState start
     putStrLn ("Thanks for playing!")
