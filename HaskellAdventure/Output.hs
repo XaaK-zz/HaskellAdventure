@@ -15,10 +15,25 @@ import HaskellAdventure.Data
 --Accepts a GameState object and converts it to a string representation to
 --  display to the user
 describeState :: GameState -> String
-describeState state = (showRoom . getRoomById . currentRoom) state ++
-                      (showItems (currentRoom state) (items state)) ++
-                      tempOutput state
+describeState state = tempOutput state ++
+                      (showRoom . (getRoom state) . currentRoom) state ++
+                      (showItems (currentRoom state) (items state))
+                      
 
+--getRoom
+--Accepts a GameState and a RoomId and extracts the requested Room from the GameState
+getRoom :: GameState -> RoomId -> GameNode
+getRoom gs roomId = getRoomInner roomId (nodeList gs)
+    where
+        getIndexForRoomId :: RoomId -> RoomList -> Int -> Int
+        getIndexForRoomId incomingRoomId [] index              = 0
+        getIndexForRoomId incomingRoomId ((roomId,_):rs) index = if roomId == incomingRoomId then
+                                                                    index
+                                                               else
+                                                                    getIndexForRoomId incomingRoomId rs index+1
+        getRoomInner :: RoomId -> RoomList -> GameNode
+        getRoomInner roomId roomList = snd (roomList !! (getIndexForRoomId roomId roomList 0))
+        
 --showRoom
 --Accepts a GameNode Room and converts it to a string representation to
 --  display to the user.
@@ -29,10 +44,10 @@ showRoom gn = desc gn ++ showExits gn
 --Accepts a GameNode Room and converts it to a string representation of
 --  the exits from the room
 --The secondary function is to ensure commas work correctly
-showExits (Room _ [] _) = "\nThere are no exits."
-showExits (Room a (e:es) _) = "\nThe exits are: " ++ (show e) ++ showExits' (Room a es [])
-showExits' (Room _ [] _) = ""
-showExits' (Room a (e:es) _) = ", " ++ (show e) ++ showExits' (Room a es [])
+showExits (Room _ [] _ _ _) = "\nThere are no exits."
+showExits (Room a (e:es) _ f t) = "\nThe exits are: " ++ (show e) ++ showExits' (Room a es [] f t)
+showExits' (Room _ [] _ _ _) = ""
+showExits' (Room a (e:es) _ f t) = ", " ++ (show e) ++ showExits' (Room a es [] f t)
 
 --showItems
 --Accepts a RoomId (Int) and the current item list (which would normally be

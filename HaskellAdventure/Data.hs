@@ -11,19 +11,17 @@ import qualified Data.IntMap as IntMap
 import Data.Maybe
 
 --List of GameNodes
-room1 = Room "You stand at the entrance to the castle." [North] [2]
-room2 = Room "The gatehouse.  Behind lies the portcullis - ahead lies the courtyard of the castle." [North, South] [3,1]
-room3 = Room "End of the line" [South] [2]
-
---getRoomById
---Function for extracting a room for a given Id
-getRoomById :: RoomId -> GameNode
-getRoomById id = if isNothing $ IntMap.lookup id roomList then
-                    room1
-                 else
-                    fromJust $ IntMap.lookup id roomList
-                 where
-                    roomList = IntMap.fromList [(1,room1),(2,room2),(3,room3)]
+room1 = Room "You stand at the entrance to the castle." [North] [2] defaultItemHandler ""
+room2 = Room "The gatehouse.  Behind lies the portcullis - ahead lies the courtyard of the castle." [North, South] [3,1] defaultItemHandler ""
+room3 = Room "End of the line.  There is a locked door to the north." [South] [2]
+                (\gn item -> if item == "Key" then
+                                gn{desc="End of the line.  There is an open door here.",roomTempOutput="The door opens...\n\n",exits=[North,South],adjacentRooms=[4,2]}
+                             else
+                                gn
+                ) ""
+room4 = Room "You made it to the treasure room!" [South] [3] defaultItemHandler ""
 
 --Starting GameState
-start = GameState {currentRoom = 1, items = [(3,"Key")], inventory = [], tempOutput=""}
+start = GameState {currentRoom = 1, items = [(3,"Key")], inventory = [], tempOutput="", nodeList=[(1,room1),(2,room2),(3,room3),(4,room4)]}
+
+defaultItemHandler gn item = gn

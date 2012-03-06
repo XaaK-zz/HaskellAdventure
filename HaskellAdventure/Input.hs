@@ -12,6 +12,8 @@ import HaskellAdventure.DataTypes
 import HaskellAdventure.Data
 import HaskellAdventure.Output
 
+import System.Console.Haskeline
+
 --executeRoom
 --This is the main control loop of the game
 --Each successive command will invoke executeState recursively until the
@@ -41,9 +43,9 @@ processInput gs (Go dir) =
     if isValidExit then
         gs{currentRoom = ((adjacentRooms room) !! (fromJust exitIndex)),tempOutput=""}
     else
-        gs{currentRoom = (currentRoom gs),tempOutput="\nYou can't go that way."}
+        gs{currentRoom = (currentRoom gs),tempOutput="You can't go that way.\n\n"}
     where
-        room        = getRoomById $ currentRoom gs
+        room        = getRoom gs $ currentRoom gs
         roomExits   = exits room
         isValidExit = dir `elem` roomExits
         exitIndex   = elemIndex dir roomExits 
@@ -51,9 +53,9 @@ processInput gs (Go dir) =
 --Take/Pickup Commands
 processInput gs (Get item) =
     if isValidLocationForItem then
-        gs{items=newItemList,inventory=item:currentItems,tempOutput=""}
+        gs{items=newItemList,inventory=item:currentItems,tempOutput="You picked up the " ++ item ++ ".\n\n"}
     else
-        gs{tempOutput="\nI don't see a " ++ item ++ " here."}
+        gs{tempOutput="I don't see a " ++ item ++ " here.\n\n"}
     where
         currentRoomId          = currentRoom gs
         isValidLocationForItem = (currentRoomId,item) `elem` (items gs)
@@ -62,6 +64,23 @@ processInput gs (Get item) =
 
 --Inventory Command
 processInput gs Inv = gs{tempOutput=showInventory $ inventory gs}
+
+--Using Items
+---Note: this uses the room specific function (useItem) for the current Room
+--  This gives us back a new room, which we replace in the GameState NodeList
+--  This allows us to make global changes to the game, such as opening locked doors in rooms
+processInput gs (Use item) =
+    if haveItem then
+        gs{nodeList=newRoomList,tempOutput=roomTempOutput newRoom}
+    else
+        gs{tempOutput="You don't have a " ++ item ++ ".\n\n"}
+    where
+        haveItem              = item `elem` (inventory gs)
+        currentRoomId         = currentRoom gs
+        currentRoomNode       = getRoom gs currentRoomId
+        newRoom               = useItem currentRoomNode currentRoomNode item
+        newRoomList           = (filter (\(roomId,node)->if roomId == currentRoomId then False else True) (nodeList gs)) ++ [(currentRoomId,newRoom)]
+        
         
 --getComand
 --This converts a user entered string to a Command data type
@@ -80,5 +99,7 @@ getCommand input = do
                           Get "Key"
                       else if input == "inv" then
                           Inv
+                      else if input == "use key" then
+                          Use "Key"
                       else
                           End
