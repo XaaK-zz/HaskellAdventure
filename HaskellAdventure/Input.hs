@@ -12,7 +12,7 @@ import HaskellAdventure.DataTypes
 import HaskellAdventure.Data
 import HaskellAdventure.Output
 
-import System.Console.Haskeline
+import MParserCombs
 
 --executeRoom
 --This is the main control loop of the game
@@ -52,29 +52,30 @@ processInput gs (Go dir) =
 --Take/Pickup Commands
 processInput gs (Get item) =
     if isValidLocationForItem then
-        gs{items=newItemList,inventory=newInvItem:currentItems,tempOutput="You picked up the " ++ itemDesc item ++ ".\n\n"}
+        gs{items=newItemList,inventory=newInvItem:currentItems,tempOutput="You picked up the " ++ itemDesc newItem ++ ".\n\n"}
     else
-        gs{tempOutput="I don't see a " ++ itemDesc item ++ " here.\n\n"}
+        gs{tempOutput="I don't see a " ++ itemDesc newItem ++ " here.\n\n"}
     where
+        newItem                = fromJust $ getItem gs (show item)
         currentRoomId          = currentRoom gs
         itemListInRoom         = (filter (\(Item itemLocation _ _) -> if itemLocation == currentRoomId then True else False) . items) gs
-        isValidLocationForItem = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc item then True else False)) itemListInRoom
+        isValidLocationForItem = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc newItem then True else False)) itemListInRoom
         currentItems           = inventory gs
-        newItemList            = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc item) (items gs)
-        newInvItem             = fromJust (getItem gs (itemDesc item))
+        newItemList            = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc newItem) (items gs)
+        newInvItem             = fromJust (getItem gs (itemDesc newItem))
 
 --Drop Commands
 processInput gs (Drop item) =
     if haveItem then
-        gs{items=newItemList,inventory=newInvList,tempOutput="You dropped the " ++ itemDesc item ++ ".\n\n"}
+        gs{items=newItemList,inventory=newInvList,tempOutput="You dropped the " ++ itemDesc (fromJust newItem) ++ ".\n\n"}
     else
-        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
+        gs{tempOutput="You don't have a " ++ itemDesc (fromJust newItem) ++ ".\n\n"}
     where
         currentRoomId   = currentRoom gs
-        newItem         = getItemFromInventory gs (itemDesc item)
+        newItem         = getItemFromInventory gs (show item)
         haveItem        = (not . isNothing) newItem
-        newItemList     = item{itemLocation = currentRoomId,itemLongDesc = (itemLongDesc (fromJust newItem))} : (items gs)
-        newInvList      = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc item) (inventory gs)
+        newItemList     = (fromJust newItem){itemLocation = currentRoomId,itemLongDesc = (itemLongDesc (fromJust newItem))} : (items gs)
+        newInvList      = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc (fromJust newItem)) (inventory gs)
     
 --Inventory Command
 processInput gs Inv = gs{tempOutput=showInventory $ inventory gs}
@@ -87,13 +88,14 @@ processInput gs (Use item) =
     if haveItem then
         gs{nodeList=newRoomList,tempOutput=roomTempOutput newRoom}
     else
-        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
+        gs{tempOutput="You don't have a " ++ itemDesc newItem ++ ".\n\n"}
     where
         currentItems     = inventory gs
-        haveItem         = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc item then True else False)) currentItems
+        haveItem         = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc newItem then True else False)) currentItems
+        newItem          = fromJust $ getItemFromInventory gs (show item)
         currentRoomId    = currentRoom gs
         currentRoomNode  = getRoom gs currentRoomId
-        newRoom          = useItem currentRoomNode currentRoomNode item
+        newRoom          = useItem currentRoomNode currentRoomNode newItem
         newRoomList      = (filter (\(roomId,_) -> if roomId == currentRoomId then False else True) (nodeList gs)) ++ [(currentRoomId,newRoom)]
 
 --Looking at Items
@@ -101,34 +103,25 @@ processInput gs (Look item) =
     if haveItem then
         gs{tempOutput=itemLongDesc (fromJust newItem)}
     else
-        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
+        gs{tempOutput="You don't have a " ++ itemDesc (fromJust newItem) ++ ".\n\n"}
     where
         currentItems  = inventory gs
-        newItem       = getItemFromInventory gs (itemDesc item)
+        newItem       = getItemFromInventory gs $ show item
         haveItem      = (not . isNothing) newItem
-        
+
+--Invalid Input Command
+processInput gs Invalid = gs{tempOutput="What???!\n"}
+
+    
 --getComand
 --This converts a user entered string to a Command data type
 --  This parsing is crude - hopefully we can build a better parsing system...
 getCommand :: String -> Command
 getCommand input = do
-                      if input == "north" then
-                          Go North
-                      else if input == "south" then
-                          Go South
-                      else if input == "east" then
-                          Go East
-                      else if input == "west" then
-                          Go West
-                      else if input == "get key" then
-                          Get (Item 1 "Key" "")
-                      else if input == "inv" then
-                          Inv
-                      else if input == "use key" then
-                          Use (Item 1 "Key" "")
-                      else if input == "look key" then
-                          Look (Item 1 "Key" "")
-                      else if input == "drop key" then
-                          Drop (Item 1 "Key" "")
-                      else
-                          End
+                    let x = (parse command input)
+                    if null x then
+                        Invalid
+                    else
+                        x !! 0
+
+                    
