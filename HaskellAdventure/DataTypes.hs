@@ -45,4 +45,5 @@ data Command =   Go Direction
                | End
                | Use Item
                | Look Item
+               | Drop Item
     deriving (Eq)

@@ -63,7 +63,19 @@ processInput gs (Get item) =
         newItemList            = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc item) (items gs)
         newInvItem             = fromJust (getItem gs (itemDesc item))
 
-        
+--Drop Commands
+processInput gs (Drop item) =
+    if haveItem then
+        gs{items=newItemList,inventory=newInvList,tempOutput="You dropped the " ++ itemDesc item ++ ".\n\n"}
+    else
+        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
+    where
+        currentRoomId   = currentRoom gs
+        newItem         = getItemFromInventory gs (itemDesc item)
+        haveItem        = (not . isNothing) newItem
+        newItemList     = item{itemLocation = currentRoomId,itemLongDesc = (itemLongDesc (fromJust newItem))} : (items gs)
+        newInvList      = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc item) (inventory gs)
+    
 --Inventory Command
 processInput gs Inv = gs{tempOutput=showInventory $ inventory gs}
 
@@ -116,5 +128,7 @@ getCommand input = do
                           Use (Item 1 "Key" "")
                       else if input == "look key" then
                           Look (Item 1 "Key" "")
+                      else if input == "drop key" then
+                          Drop (Item 1 "Key" "")
                       else
                           End
