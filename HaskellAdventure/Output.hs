@@ -33,7 +33,51 @@ getRoom gs roomId = getRoomInner roomId (nodeList gs)
                                                                     getIndexForRoomId incomingRoomId rs index+1
         getRoomInner :: RoomId -> RoomList -> GameNode
         getRoomInner roomId roomList = snd (roomList !! (getIndexForRoomId roomId roomList 0))
-        
+
+--getItemFromInventory
+--Retrieves a specific item from the GameState object inventory list (based on the short description)
+getItemFromInventory :: GameState -> String -> Maybe Item
+getItemFromInventory gs itemDescription =
+    if haveItem then
+        Just (currentItems !! (getItemFromInventory' itemDescription currentItems 0))
+    else
+        Nothing
+    where
+        currentItems                                        = inventory gs
+        haveItem                                            = (not . null . filter (\(Item _ desc _) -> if desc == itemDescription then
+                                                                                                            True
+                                                                                                        else
+                                                                                                            False)
+                                                                ) currentItems
+        getItemFromInventory'                               :: String -> ItemList -> Int -> Int
+        getItemFromInventory' itemDescription [] index      = 0
+        getItemFromInventory' itemDescription (i:is) index  = if (itemDesc i) == itemDescription  then
+                                                                 index
+                                                              else
+                                                                 getItemFromInventory' itemDescription is index+1
+
+--getItem
+--Retrieves a specific item from the GameState object (based on the short description)
+getItem :: GameState -> String -> Maybe Item
+getItem gs itemDescription =
+    if validDescriptionForItem then
+        Just (currentItems !! (getItem' itemDescription currentItems 0))
+    else
+        Nothing
+    where
+        currentItems                          = items gs
+        validDescriptionForItem               = (not . null . filter (\(Item _ desc _) -> if desc == itemDescription then
+                                                                                            True
+                                                                                        else
+                                                                                            False)
+                                                ) currentItems
+        getItem'                              :: String -> ItemList -> Int -> Int
+        getItem' itemDescription [] index     = 0
+        getItem' itemDescription (i:is) index = if (itemDesc i) == itemDescription  then
+                                                    index
+                                                else
+                                                    getItem' itemDescription is index+1
+             
 --showRoom
 --Accepts a GameNode Room and converts it to a string representation to
 --  display to the user.
@@ -54,24 +98,26 @@ showExits' (Room a (e:es) _ f t) = ", " ++ (show e) ++ showExits' (Room a es [] 
 --  extracted from the GameState object) and converts them to a string
 --  representation of the current items in the room
 showItems :: RoomId -> ItemList -> String
-showItems currentRoom []                 = ""
-showItems currentRoom ((roomId,item):es) = if currentRoom == roomId then
-                                                "\nThere is a " ++ item ++ " here." ++ showItems' currentRoom es
-                                           else
-                                                showItems currentRoom es
+showItems currentRoom []     = ""
+showItems currentRoom (i:is) =  if (itemLocation i) == currentRoom then
+                                    "\nThere is a " ++ (itemDesc i) ++ " here." ++ showItems' currentRoom is
+                                else
+                                    showItems currentRoom is
+                                        
 showItems' currentRoom []                 = ""
-showItems' currentRoom ((roomId,item):es) = if currentRoom == roomId then
-                                                "There is a " ++ item ++ " here.\n" ++ showItems' currentRoom es
-                                           else
-                                                showItems' currentRoom es
+showItems' currentRoom (i:is) = if (itemLocation i) == currentRoom then
+                                    "There is a " ++ (itemDesc i) ++ " here.\n" ++ showItems' currentRoom is
+                                else
+                                    showItems' currentRoom is
+
 
 --showInventory
 --Accepts a list of Items and converts it to a String to display
 --  to the user
 showInventory :: [Item] -> String
 showInventory []      = "\nYou have nothing."
-showInventory (i:is)  = "\nYou have: " ++ i ++ showInventory' is
+showInventory (i:is)  = "\nYou have: " ++ (itemDesc i) ++ showInventory' is
 showInventory' []     = ""
-showInventory' (i:is) = "\n" ++ i ++ showInventory' is
+showInventory' (i:is) = "\n" ++ (itemDesc i) ++ showInventory' is
 
 

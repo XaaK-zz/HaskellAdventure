@@ -8,10 +8,8 @@ module HaskellAdventure.DataTypes where
 --Room Identifier - each room will have a unique id
 type RoomId = Int
 --Items
-type Item = String
---List of tuples determining where each Item is located in the world
-type ItemList = [(RoomId,Item)]
---
+type ItemList = [Item]
+--List of tuples representing the Rooms and their locations
 type RoomList = [(RoomId,GameNode)]
 
 --Movement directions in the world
@@ -33,10 +31,18 @@ data GameState = GameState {  currentRoom :: RoomId,
                               tempOutput  :: String,
                               nodeList    :: RoomList}
 
+--Item datatype to represent items in the game
+--  These can be picked up, moved, and looked at
+data Item = Item {itemLocation  :: RoomId,
+                  itemDesc      :: String,
+                  itemLongDesc  :: String}
+    deriving (Eq)
+    
 --Commands allowed by the parser
 data Command =   Go Direction
                | Get Item
                | Inv
                | End
                | Use Item
-    deriving (Show, Eq)
+               | Look Item
+    deriving (Eq)

@@ -24,7 +24,6 @@ executeState gameState =
         putStrLn $ describeState $ gameState 
         putStr "> "
         input <- getLine
-        --rawInput <-  getInputLine "> "
         let inputCommand = getCommand input
         if inputCommand == End then
             return ()
@@ -53,15 +52,18 @@ processInput gs (Go dir) =
 --Take/Pickup Commands
 processInput gs (Get item) =
     if isValidLocationForItem then
-        gs{items=newItemList,inventory=item:currentItems,tempOutput="You picked up the " ++ item ++ ".\n\n"}
+        gs{items=newItemList,inventory=newInvItem:currentItems,tempOutput="You picked up the " ++ itemDesc item ++ ".\n\n"}
     else
-        gs{tempOutput="I don't see a " ++ item ++ " here.\n\n"}
+        gs{tempOutput="I don't see a " ++ itemDesc item ++ " here.\n\n"}
     where
         currentRoomId          = currentRoom gs
-        isValidLocationForItem = (currentRoomId,item) `elem` (items gs)
+        itemListInRoom         = (filter (\(Item itemLocation _ _) -> if itemLocation == currentRoomId then True else False) . items) gs
+        isValidLocationForItem = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc item then True else False)) itemListInRoom
         currentItems           = inventory gs
-        newItemList            = filter (\(roomId,oldItem)->roomId /= currentRoomId && item /= oldItem) (items gs)
+        newItemList            = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc item) (items gs)
+        newInvItem             = fromJust (getItem gs (itemDesc item))
 
+        
 --Inventory Command
 processInput gs Inv = gs{tempOutput=showInventory $ inventory gs}
 
@@ -73,14 +75,25 @@ processInput gs (Use item) =
     if haveItem then
         gs{nodeList=newRoomList,tempOutput=roomTempOutput newRoom}
     else
-        gs{tempOutput="You don't have a " ++ item ++ ".\n\n"}
+        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
     where
-        haveItem              = item `elem` (inventory gs)
-        currentRoomId         = currentRoom gs
-        currentRoomNode       = getRoom gs currentRoomId
-        newRoom               = useItem currentRoomNode currentRoomNode item
-        newRoomList           = (filter (\(roomId,node)->if roomId == currentRoomId then False else True) (nodeList gs)) ++ [(currentRoomId,newRoom)]
-        
+        currentItems     = inventory gs
+        haveItem         = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc item then True else False)) currentItems
+        currentRoomId    = currentRoom gs
+        currentRoomNode  = getRoom gs currentRoomId
+        newRoom          = useItem currentRoomNode currentRoomNode item
+        newRoomList      = (filter (\(roomId,_) -> if roomId == currentRoomId then False else True) (nodeList gs)) ++ [(currentRoomId,newRoom)]
+
+--Looking at Items
+processInput gs (Look item) =
+    if haveItem then
+        gs{tempOutput=itemLongDesc (fromJust newItem)}
+    else
+        gs{tempOutput="You don't have a " ++ itemDesc item ++ ".\n\n"}
+    where
+        currentItems  = inventory gs
+        newItem       = getItemFromInventory gs (itemDesc item)
+        haveItem      = (not . isNothing) newItem
         
 --getComand
 --This converts a user entered string to a Command data type
@@ -96,10 +109,12 @@ getCommand input = do
                       else if input == "west" then
                           Go West
                       else if input == "get key" then
-                          Get "Key"
+                          Get (Item 1 "Key" "")
                       else if input == "inv" then
                           Inv
                       else if input == "use key" then
-                          Use "Key"
+                          Use (Item 1 "Key" "")
+                      else if input == "look key" then
+                          Look (Item 1 "Key" "")
                       else
                           End
