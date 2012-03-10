@@ -11,6 +11,7 @@ import Data.List
 import HaskellAdventure.DataTypes
 import HaskellAdventure.Data
 import HaskellAdventure.Output
+import Data.Char
 
 import MParserCombs
 
@@ -58,8 +59,8 @@ processInput gs (Get item) =
     where
         newItem                = fromJust $ getItem gs (show item)
         currentRoomId          = currentRoom gs
-        itemListInRoom         = (filter (\(Item itemLocation _ _) -> if itemLocation == currentRoomId then True else False) . items) gs
-        isValidLocationForItem = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc newItem then True else False)) itemListInRoom
+        itemListInRoom         = (filter (\(Item itemLocation _ _ _) -> if itemLocation == currentRoomId then True else False) . items) gs
+        isValidLocationForItem = (not . null . filter (\(Item _ desc _ _) -> if desc == itemDesc newItem then True else False)) itemListInRoom
         currentItems           = inventory gs
         newItemList            = filter (\tempItem -> itemLocation tempItem /= currentRoomId && itemDesc tempItem /= itemDesc newItem) (items gs)
         newInvItem             = fromJust (getItem gs (itemDesc newItem))
@@ -91,7 +92,7 @@ processInput gs (Use item) =
         gs{tempOutput="You don't have a " ++ itemDesc newItem ++ ".\n\n"}
     where
         currentItems     = inventory gs
-        haveItem         = (not . null . filter (\(Item _ desc _) -> if desc == itemDesc newItem then True else False)) currentItems
+        haveItem         = (not . null . filter (\(Item _ desc _ _) -> if desc == itemDesc newItem then True else False)) currentItems
         newItem          = fromJust $ getItemFromInventory gs (show item)
         currentRoomId    = currentRoom gs
         currentRoomNode  = getRoom gs currentRoomId
@@ -112,13 +113,25 @@ processInput gs (Look item) =
 --Invalid Input Command
 processInput gs Invalid = gs{tempOutput="What???!\n"}
 
+--Lighting Items
+processInput gs (Light item) =
+    if haveItem then
+        gs{tempOutput="You lit the lamp.",inventory=(fromJust newItem){itemStatus="On"}:newInvList}
+    else
+        gs{tempOutput="You don't have a " ++ itemDesc (fromJust newItem) ++ ".\n\n"}
+    where
+        currentItems  = inventory gs
+        newItem       = getItemFromInventory gs $ show item
+        haveItem      = (not . isNothing) newItem
+        newInvList    = filter (\tempItem -> itemDesc tempItem /= itemDesc (fromJust newItem)) currentItems
     
+
 --getComand
 --This converts a user entered string to a Command data type
 --  This parsing is crude - hopefully we can build a better parsing system...
 getCommand :: String -> Command
 getCommand input = do
-                    let x = (parse command input)
+                    let x = (parse command (map toLower input))
                     if null x then
                         Invalid
                     else

@@ -44,7 +44,7 @@ getItemFromInventory gs itemDescription =
         Nothing
     where
         currentItems                                        = inventory gs
-        haveItem                                            = (not . null . filter (\(Item _ desc _) -> if desc == itemDescription then
+        haveItem                                            = (not . null . filter (\(Item _ desc _ _) -> if desc == itemDescription then
                                                                                                             True
                                                                                                         else
                                                                                                             False)
@@ -66,7 +66,7 @@ getItem gs itemDescription =
         Nothing
     where
         currentItems                          = items gs
-        validDescriptionForItem               = (not . null . filter (\(Item _ desc _) -> if desc == itemDescription then
+        validDescriptionForItem               = (not . null . filter (\(Item _ desc _ _) -> if desc == itemDescription then
                                                                                             True
                                                                                         else
                                                                                             False)
@@ -116,8 +116,13 @@ showItems' currentRoom (i:is) = if (itemLocation i) == currentRoom then
 --  to the user
 showInventory :: [Item] -> String
 showInventory []      = "\nYou have nothing."
-showInventory (i:is)  = "\nYou have: " ++ (itemDesc i) ++ showInventory' is
+showInventory (i:is)  = "\nYou have: " ++ (itemDesc i) ++ (showStatus i) ++ showInventory' is
 showInventory' []     = ""
-showInventory' (i:is) = "\n" ++ (itemDesc i) ++ showInventory' is
+showInventory' (i:is) = "\n" ++ (itemDesc i) ++ (showStatus i) ++ showInventory' is
+
+showStatus (Item _ _ _ s) = if null s then
+                            ""
+                          else
+                            ".  It is currently: " ++ s
 
 
