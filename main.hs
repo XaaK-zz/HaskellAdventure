@@ -20,4 +20,5 @@ main =
  do
     hSetBuffering stdin LineBuffering
     executeState start
+    hSetBuffering stdin NoBuffering
     putStrLn ("Thanks for playing!")

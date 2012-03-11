@@ -116,7 +116,7 @@ processInput gs Invalid = gs{tempOutput="What???!\n"}
 --Lighting Items
 processInput gs (Light item) =
     if haveItem then
-        gs{tempOutput="You lit the lamp.",inventory=(fromJust newItem){itemStatus="On"}:newInvList}
+        gs{tempOutput="You lit the lamp.",inventory=(fromJust newItem){itemStatus="On"}:newInvList,nodeList=newRoomList}
     else
         gs{tempOutput="You don't have a " ++ itemDesc (fromJust newItem) ++ ".\n\n"}
     where
@@ -124,7 +124,7 @@ processInput gs (Light item) =
         newItem       = getItemFromInventory gs $ show item
         haveItem      = (not . isNothing) newItem
         newInvList    = filter (\tempItem -> itemDesc tempItem /= itemDesc (fromJust newItem)) currentItems
-    
+        newRoomList   = (5,room5Alt) : filter (\(roomID,_) -> if roomID == 5 then False else True ) (nodeList gs)
 
 --getComand
 --This converts a user entered string to a Command data type
