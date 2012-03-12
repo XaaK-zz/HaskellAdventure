@@ -115,9 +115,9 @@ showItems' currentRoom (i:is) = if (itemLocation i) == currentRoom then
 --Accepts a list of Items and converts it to a String to display
 --  to the user
 showInventory :: [Item] -> String
-showInventory []      = "\nYou have nothing."
+showInventory []      = "\nYou have nothing.\n"
 showInventory (i:is)  = "\nYou have: " ++ (itemDesc i) ++ (showStatus i) ++ showInventory' is
-showInventory' []     = ""
+showInventory' []     = "\n"
 showInventory' (i:is) = "\n" ++ (itemDesc i) ++ (showStatus i) ++ showInventory' is
 
 showStatus (Item _ _ _ s) = if null s then

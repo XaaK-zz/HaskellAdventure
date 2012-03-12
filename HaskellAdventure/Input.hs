@@ -124,8 +124,25 @@ processInput gs (Light item) =
         newItem       = getItemFromInventory gs $ show item
         haveItem      = (not . isNothing) newItem
         newInvList    = filter (\tempItem -> itemDesc tempItem /= itemDesc (fromJust newItem)) currentItems
-        newRoomList   = (5,room5Alt) : filter (\(roomID,_) -> if roomID == 5 then False else True ) (nodeList gs)
+        newRoomList   = (7,room7Alt) : filter (\(roomID,_) -> if roomID == 7 then False else True ) (nodeList gs)
 
+--Talking to things
+processInput gs (Talk thing) =
+    if currentRoom gs == 2 && thing == "guard" then
+        gs{tempOutput="The guard says you cannot enter the city without a gift for the king.  Only a golden egg will do.\n\n"}
+    else if currentRoom gs == 13 && thing == "dragon" then
+        gs{tempOutput="\"You want a piece of my great treasure?  Then you will need to answer a simple riddle:\n\tA box without hinges, key, or lid,\n\tYet golden treasure inside is hid.\n\""}
+    else
+        gs{tempOutput="I don't see a " ++ thing ++ " around here.\n"}
+
+--Climbing things
+processInput gs (Climb thing) =
+    if currentRoom gs == 4 && thing == "tree" then
+        gs{tempOutput="You climb the tree with difficulty.\n\n",currentRoom=5}
+    else
+        gs{tempOutput="I don't see a " ++ thing ++ " around here.\n"}
+
+        
 --getComand
 --This converts a user entered string to a Command data type
 --  This parsing is crude - hopefully we can build a better parsing system...
