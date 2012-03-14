@@ -61,33 +61,3 @@ data ItemDT = Branch
             | Shoes
     deriving (Eq,Show)
 
---Parser details
-command             :: Parser Command
-directionModifier   :: Parser Direction
-itemModifier        :: Parser ItemDT
-
-command = (do tok "go "; dir <- directionModifier; return (Go dir)) `orelse`
-          (do tok "get "; itemTemp <- itemModifier; return (Get itemTemp)) `orelse`
-          (do tok "use "; itemTemp <- itemModifier; return (Use itemTemp)) `orelse`
-          (do tok "look "; itemTemp <- itemModifier; return (Look itemTemp)) `orelse`
-          (do tok "drop "; itemTemp <- itemModifier; return (Drop itemTemp)) `orelse`
-          (do tok "light "; itemTemp <- itemModifier; return (Light itemTemp)) `orelse`
-          (do tok "talk "; talkTemp <- many (sat isLetter); return (Talk talkTemp)) `orelse`
-          (do tok "climb "; climbTemp <- many (sat isLetter); return (Climb climbTemp)) `orelse`
-          (do tok "inv"; return (Inv)) `orelse`
-          (do tok "quit"; return (End)) `orelse`
-          (do dir <- directionModifier; return (Go dir)) `orelse`
-          return Invalid
-
-directionModifier =
-           (do tok "north"; return North) `orelse`
-           (do tok "south"; return South) `orelse`
-           (do tok "east"; return East) `orelse`
-           (do tok "west"; return West) `orelse`
-           (do tok "down"; return Down) `orelse`
-           (do tok "up"; return Up)
-           
-itemModifier = (do tok "branch"; return Branch) `orelse`
-               (do tok "lamp"; return Lamp) `orelse`
-               (do tok "shoes"; return Shoes) `orelse`
-               (do tok "magic shoes"; return Shoes)
